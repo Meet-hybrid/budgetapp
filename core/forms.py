@@ -45,16 +45,6 @@ class TransactionForm(forms.ModelForm):
 
     def __init__(self, user=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if user:
-            # Show user's own categories + system defaults
-            self.fields['category'].queryset = Category.objects.filter(
-                models.Q(user=user) | models.Q(user__isnull=True)
-            ).order_by('name')
-        self.fields['date'].initial = timezone.now().date()
-
-    # Fix circular import — import models inside init is fine, but let's just import at top
-    def __init__(self, user=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         from django.db.models import Q
         if user:
             self.fields['category'].queryset = Category.objects.filter(
