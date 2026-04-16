@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Delete Transaction - BudgetWise{% endblock %}
+{% block header %}
+<div class="page-title">Delete Transaction</div>
+{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div class="card">
+    <div style="font-size:48px;text-align:center;margin-bottom:16px;">&#128465;</div>
+    <h3 style="text-align:center;margin-bottom:8px;">Are you sure?</h3>
+    <p class="text-muted text-sm" style="text-align:center;margin-bottom:24px;">
+      Delete <strong>{{ transaction.description|default:"this transaction" }}</strong> for 
+      <strong>₦{{ transaction.amount }}</strong> on {{ transaction.date }}?
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex gap-2" style="justify-content:center;">
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'transaction_list' %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

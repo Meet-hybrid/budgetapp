@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Categories - BudgetWise{% endblock %}
+{% block header %}
+<div class="flex-between mb-4">
+  <div>
+    <div class="page-title">Categories</div>
+    <div class="page-subtitle">Organize your income and expenses</div>
+  </div>
+  <a href="{% url 'category_create' %}" class="btn btn-primary">+ Add Category</a>
+</div>
+{% endblock %}
+{% block content %}
+<div class="grid-auto">
+  {% for cat in categories %}
+  <div class="card" style="display:flex;align-items:center;gap:14px;">
+    <div style="width:44px;height:44px;background:{{ cat.color }}25;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:2px solid {{ cat.color }}40;">
+      {{ cat.icon }}
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div class="fw-700">{{ cat.name }}</div>
+      <div class="text-xs text-muted">{{ cat.get_category_type_display }}</div>
+    </div>
+    {% if cat.user %}
+    <div class="flex gap-1">
+      <a href="{% url 'category_edit' cat.pk %}" class="btn btn-outline btn-sm">Edit</a>
+      <a href="{% url 'category_delete' cat.pk %}" class="btn btn-sm" style="background:var(--expense-bg);color:var(--expense);">Del</a>
+    </div>
+    {% else %}
+    <span class="badge" style="background:var(--surface2);color:var(--text3);">Default</span>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="empty-state">
+    <div class="empty-icon">&#127991;</div>
+    <p>No categories yet</p>
+    <a href="{% url 'category_create' %}" class="btn btn-primary">Add Category</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

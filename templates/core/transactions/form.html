@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - BudgetWise{% endblock %}
+{% block header %}
+<div class="flex-between mb-4">
+  <div>
+    <div class="page-title">{{ title }}</div>
+    <div class="page-subtitle">{% if transaction %}Editing transaction #{{ transaction.pk }}{% else %}Add a new transaction{% endif %}</div>
+  </div>
+  <a href="{% url 'transaction_list' %}" class="btn btn-outline">&#8592; Back</a>
+</div>
+{% endblock %}
+{% block content %}
+<div style="max-width:600px;">
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="grid-2" style="gap:20px;">
+        <div class="form-group">
+          <label class="form-label">Type *</label>
+          {{ form.transaction_type }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount *</label>
+          {{ form.amount }}
+        </div>
+      </div>
+      <div class="grid-2" style="gap:20px;">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          {{ form.category }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date *</label>
+          {{ form.date }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        {{ form.description }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note (optional)</label>
+        {{ form.note }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Recurring</label>
+        {{ form.recurring }}
+      </div>
+      <div class="flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">Save Transaction</button>
+        <a href="{% url 'transaction_list' %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

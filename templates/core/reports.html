@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Reports - BudgetWise{% endblock %}
+{% block header %}
+<div class="flex-between mb-4">
+  <div>
+    <div class="page-title">Reports</div>
+    <div class="page-subtitle">{{ month_name }} financial summary</div>
+  </div>
+  <a href="{% url 'export_csv' %}" class="btn btn-outline">&#8595; Export CSV</a>
+</div>
+{% endblock %}
+{% block content %}
+
+<!-- Period Selector -->
+<form method="get" class="card mb-6" style="padding:16px;">
+  <div class="flex gap-3" style="align-items:flex-end;flex-wrap:wrap;">
+    <div style="flex:1;min-width:140px;">
+      <label class="form-label">Month</label>
+      <select name="month" class="form-control">
+        {% for m_num, m_name in months %}
+        <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex:1;min-width:100px;">
+      <label class="form-label">Year</label>
+      <select name="year" class="form-control">
+        {% for y in years %}<option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">View Report</button>
+  </div>
+</form>
+
+<!-- Stats -->
+<div class="stats-grid mb-6" style="grid-template-columns:repeat(3,1fr);">
+  <div class="stat-card income"><div class="stat-label">Total Income</div><div class="stat-amount income">₦{{ total_income|floatformat:2 }}</div></div>
+  <div class="stat-card expense"><div class="stat-label">Total Expenses</div><div class="stat-amount expense">₦{{ total_expense|floatformat:2 }}</div></div>
+  <div class="stat-card balance"><div class="stat-label">Balance</div><div class="stat-amount {% if balance < 0 %}text-expense{% else %}balance{% endif %}">₦{{ balance|floatformat:2 }}</div></div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2 mb-6">
+  <div class="card">
+    <div class="card-title">Expense Breakdown</div>
+    <canvas id="expensePie" height="240"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title">12-Month Trend</div>
+    <canvas id="trendLine" height="240"></canvas>
+  </div>
+</div>
+
+<!-- Category Tables -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title mb-4">Expenses by Category</div>
+    {% for cat in expense_by_cat %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span class="text-sm">
+        <span class="cat-dot" style="background:{{ cat.category__color|default:'#999' }};width:10px;height:10px;margin-right:6px;display:inline-block;border-radius:50%;"></span>
+        {{ cat.category__icon|default:"" }} {{ cat.category__name|default:"Uncategorized" }}
+      </span>
+      <span class="fw-700 text-expense text-sm">₦{{ cat.total|floatformat:2 }}</span>
+    </div>
+    {% empty %}<p class="text-muted text-sm">No expense data</p>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <div class="card-title mb-4">Income by Category</div>
+    {% for cat in income_by_cat %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span class="text-sm">
+        <span class="cat-dot" style="background:{{ cat.category__color|default:'#999' }};width:10px;height:10px;margin-right:6px;display:inline-block;border-radius:50%;"></span>
+        {{ cat.category__icon|default:"" }} {{ cat.category__name|default:"Uncategorized" }}
+      </span>
+      <span class="fw-700 text-income text-sm">₦{{ cat.total|floatformat:2 }}</span>
+    </div>
+    {% empty %}<p class="text-muted text-sm">No income data</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const catData = {{ expense_cat_json|safe }};
+const trend = {{ trend_json|safe }};
+const daily = {{ daily_json|safe }};
+
+if (catData.length > 0) {
+  new Chart(document.getElementById('expensePie'), {
+    type: 'doughnut',
+    data: {
+      labels: catData.map(d => d.label),
+      datasets: [{ data: catData.map(d => d.value), backgroundColor: catData.map(d => d.color), borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } }, cutout: '55%' }
+  });
+}
+
+new Chart(document.getElementById('trendLine'), {
+  type: 'line',
+  data: {
+    labels: trend.labels,
+    datasets: [
+      { label: 'Income', data: trend.income, borderColor: 'rgba(26,122,74,0.9)', backgroundColor: 'rgba(26,122,74,0.1)', tension: 0.4, fill: true, pointRadius: 4 },
+      { label: 'Expense', data: trend.expense, borderColor: 'rgba(181,49,26,0.9)', backgroundColor: 'rgba(181,49,26,0.1)', tension: 0.4, fill: true, pointRadius: 4 },
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { grid: { color: 'rgba(128,128,128,0.1)' } } } }
+});
+</script>
+{% endblock %}

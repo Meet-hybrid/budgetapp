@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Delete Budget - BudgetWise{% endblock %}
+{% block header %}<div class="page-title">Delete Budget</div>{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div class="card">
+    <div style="font-size:48px;text-align:center;margin-bottom:16px;">&#128465;</div>
+    <h3 style="text-align:center;margin-bottom:8px;">Delete this budget?</h3>
+    <p class="text-muted text-sm" style="text-align:center;margin-bottom:24px;">
+      {{ budget.category.name }} budget of ₦{{ budget.amount }} for {{ budget.month }}/{{ budget.year }}
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex gap-2" style="justify-content:center;">
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'budget_list' %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - BudgetWise{% endblock %}
+{% block header %}
+<div class="flex-between mb-6">
+  <div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">{{ current_month }} overview</div>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'transaction_create' %}" class="btn btn-primary">+ Add Transaction</a>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card income">
+    <div class="stat-label">Monthly Income</div>
+    <div class="stat-amount income">₦{{ total_income|floatformat:2 }}</div>
+    <div class="stat-icon">&#128200;</div>
+  </div>
+  <div class="stat-card expense">
+    <div class="stat-label">Monthly Expenses</div>
+    <div class="stat-amount expense">₦{{ total_expense|floatformat:2 }}</div>
+    <div class="stat-icon">&#128201;</div>
+  </div>
+  <div class="stat-card balance">
+    <div class="stat-label">Monthly Balance</div>
+    <div class="stat-amount balance {% if balance < 0 %}text-expense{% endif %}">₦{{ balance|floatformat:2 }}</div>
+    <div class="stat-icon">&#9878;</div>
+  </div>
+  <div class="stat-card net">
+    <div class="stat-label">Net Worth</div>
+    <div class="stat-amount" style="color:#6366f1;">₦{{ net_worth|floatformat:2 }}</div>
+    <div class="stat-icon">&#127381;</div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2 mb-6">
+  <div class="card">
+    <div class="card-title">6-Month Trend</div>
+    <canvas id="trendChart" height="200"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title">Expenses by Category</div>
+    <canvas id="pieChart" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Budgets + Recent Transactions -->
+<div class="grid-2">
+  <!-- Budget Overview -->
+  <div class="card">
+    <div class="flex-between mb-4">
+      <div class="card-title" style="margin:0;">Budget Status</div>
+      <a href="{% url 'budget_list' %}" class="text-sm" style="color:var(--accent);">View all</a>
+    </div>
+    {% if budget_data %}
+      {% for b in budget_data %}
+      <div style="margin-bottom:16px;">
+        <div class="flex-between text-sm">
+          <span class="fw-600">{{ b.budget.category.icon }} {{ b.budget.category.name }}</span>
+          <span class="badge badge-{{ b.status }}">{{ b.percentage }}%</span>
+        </div>
+        <div class="flex-between text-xs text-muted mt-1">
+          <span>Spent: ₦{{ b.spent|floatformat:2 }}</span>
+          <span>Budget: ₦{{ b.budget.amount|floatformat:2 }}</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar {{ b.status }}" style="width:{{ b.percentage }}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state" style="padding:24px;">
+        <div class="empty-icon">&#127919;</div>
+        <p>No budgets set for this month</p>
+        <a href="{% url 'budget_create' %}" class="btn btn-primary btn-sm">Set Budget</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="card">
+    <div class="flex-between mb-4">
+      <div class="card-title" style="margin:0;">Recent Transactions</div>
+      <a href="{% url 'transaction_list' %}" class="text-sm" style="color:var(--accent);">View all</a>
+    </div>
+    {% if recent_txns %}
+      {% for txn in recent_txns %}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="width:36px;height:36px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+          {{ txn.category.icon|default:"&#128178;" }}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="fw-600 text-sm" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ txn.description|default:txn.category.name|default:"Transaction" }}
+          </div>
+          <div class="text-xs text-muted">{{ txn.date }} &bull; {{ txn.category.name|default:"Uncategorized" }}</div>
+        </div>
+        <div class="fw-700 text-sm {% if txn.transaction_type == 'income' %}text-income{% else %}text-expense{% endif %}">
+          {% if txn.transaction_type == 'income' %}+{% else %}-{% endif %}₦{{ txn.amount|floatformat:2 }}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state" style="padding:24px;">
+        <div class="empty-icon">&#128203;</div>
+        <p>No transactions yet</p>
+        <a href="{% url 'transaction_create' %}" class="btn btn-primary btn-sm">Add First Transaction</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const trendData = {{ trend_json|safe }};
+const catData = {{ cat_expenses_json|safe }};
+
+// Trend Chart
+new Chart(document.getElementById('trendChart'), {
+  type: 'bar',
+  data: {
+    labels: trendData.labels,
+    datasets: [
+      { label: 'Income', data: trendData.income, backgroundColor: 'rgba(26,122,74,0.7)', borderRadius: 6 },
+      { label: 'Expense', data: trendData.expense, backgroundColor: 'rgba(181,49,26,0.7)', borderRadius: 6 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(128,128,128,0.1)' } } }
+  }
+});
+
+// Pie Chart
+if (catData.length > 0) {
+  new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: catData.map(d => d.label),
+      datasets: [{ data: catData.map(d => d.value), backgroundColor: catData.map(d => d.color), borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      cutout: '60%',
+    }
+  });
+} else {
+  document.getElementById('pieChart').parentElement.innerHTML += '<p style="text-align:center;color:var(--text3);font-size:13px;padding:40px 0;">No expense data yet</p>';
+  document.getElementById('pieChart').remove();
+}
+</script>
+{% endblock %}
